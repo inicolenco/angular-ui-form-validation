@@ -121,6 +121,7 @@ angular_ui_form_validations = (function () {
         customValidationAttribute: 'validationDynamicallyDefined',
         errorCount: 0,
         latestElement: null,
+        validateWhileEntering: false,
         _errorMessage: 'Field is invalid',
         _success: function () { },
         success: function () {
@@ -133,11 +134,12 @@ angular_ui_form_validations = (function () {
             var valid, hydrateDynamicallyDefinedValidation, scopeValidations,
                 setErrorIdentifier, setValidity, validatorArgs, deferred;
             validatorArgs = arguments;
-            scopeValidations = scope[attr];
+            scopeValidations = scope.$eval(attr);
 
             hydrateDynamicallyDefinedValidation = function (validation) {
                 dynamicallyDefinedValidation._errorMessage = validation.errorMessage;
                 dynamicallyDefinedValidation._success = validation.success;
+                dynamicallyDefinedValidation.validateWhileEntering = validation.validateWhileEntering;
                 return validation;
             };
 
@@ -492,7 +494,7 @@ angular_ui_form_validations = (function () {
                         currentErrorMessageIsOfALowerPriority, successFn;
 
                     var evaluateAsValid = false;
-
+                    value = getElementValue();
                     //assuming non-blur events suggest a keypress/keyup/keydown/input event
                     //only blur and runCustomValidations events are always evaluated automatically regardless of validateWhileEntering
                     if (eventType !== 'blur' && eventType !== 'runCustomValidations') {
@@ -500,14 +502,9 @@ angular_ui_form_validations = (function () {
                         if (formatterArgs.validateWhileEntering && formatterArgs.validateWhileEntering === true) {
                             //Do nothing continue on
                         } else {
-                            //TOOD: figure out why returning here is causing the cursor to be set to last position and
-                            //  slowing down UI by preventing key to be pressed while it is moved, thereby causing confusing and bad UX
-                            // return;
-                            evaluateAsValid = true;
+                            return value;
                         }
                     }
-
-                    value = getElementValue();
 
                     //Do not validate if input is pristine, i.e nothing entered by user yet
                     if ($element.hasClass('ng-pristine') && eventType !== 'runCustomValidations') {
@@ -567,6 +564,17 @@ angular_ui_form_validations = (function () {
                         var classNames = ".CustomValidationError." + formatterArgs.customValidationAttribute + "." + getPropertyNameClass(propertyName) + "property:first";
                         $log.log(classNames);
 
+                        if ('validationDynamicallyDefined' === formatterArgs.customValidationAttribute) {
+                            var targetElement = getMessageTargetElement($element).siblings(classNames);
+                            var currentElementFieldName = targetElement.attr('data-custom-field-name');
+                            var latestValidatedFieldName = formatterArgs.latestElement.attr('name');
+                            if (latestValidatedFieldName === currentElementFieldName) {
+                                targetElement.html(formatterArgs.errorMessage());
+                            }
+                            targetElement.toggle(!isValid);
+                            return;
+                        }
+                        
                         getMessageTargetElement($element).siblings(classNames).toggle(!isValid);
                     }
 
