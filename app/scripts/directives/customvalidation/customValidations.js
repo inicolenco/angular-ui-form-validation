@@ -564,7 +564,7 @@ angular_ui_form_validations = (function () {
                         var classNames = ".CustomValidationError." + formatterArgs.customValidationAttribute + "." + getPropertyNameClass(propertyName) + "property:first";
                         $log.log(classNames);
 
-                        if ('validationDynamicallyDefined' === formatterArgs.customValidationAttribute) {
+                        if ('validationDynamicallyDefined' === formatterArgs.customValidationAttribute && formatterArgs.latestElement!= null) {
                             var targetElement = getMessageTargetElement($element).siblings(classNames);
                             var currentElementFieldName = targetElement.attr('data-custom-field-name');
                             var latestValidatedFieldName = formatterArgs.latestElement.attr('name');
